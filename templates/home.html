@@ -6,7 +6,10 @@
 </head>
 <body>
     <h1>Home Page</h1>
-    <form action="/create-user" method="post">
+    <form action="/create_user" method="post">
+        <input type="text" name="username" placeholder="Enter username" required />
+        <input type="password" name="password" placeholder="Enter password" required />
+        <input type="user_type" name="user_type" placeholder="Enter user type" required />
         <button type="submit">Create New User</button>
     </form>
 </body>
