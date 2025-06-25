@@ -1,3 +1,7 @@
+# This file creates the tables for the supabase database and adds basic user creation and user login functionality
+# Actions are stored at "\create_user" and "\login"
+# Data is requested at 
+
 from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy import create_engine, String, Text, select, ForeignKey
@@ -90,6 +94,77 @@ class Student(User):
 
 Base.metadata.create_all(engine)
 
+# Homepage 
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+# Create User Code
+@app.route('/create_user', methods=['GET', 'POST'])
+def create_user():
+    if request.method == 'POST':
+        try:
+            with Session(engine) as session:
+                # Check if the username already exists
+                user_login = session.query(User_Login).filter_by(username=request.form.get('username')).first()
+                if user_login:
+                    return "Username already exists. Please choose a different username."
+                
+                # Creates the new User
+                user = User(
+                    user_type=request.form.get('user_type'),
+                    name = request.form.get('name'),
+                    district = request.form.get('district'),
+                    age = request.form.get('age')
+                )
+                # Adds User to database
+                session.add(user)
+                session.commit()
+
+                # Adds loginn information for the user to database
+                login_info = User_Login(id=user.id, username=request.form.get('username'), password=request.form.get('password'))
+                session.add(login_info)
+                session.commit()
+
+                # Adds additional information based on user type
+                if request.form.get('user_type') == 'Tutor':
+                    tutor = Tutor(id=user.id, subjects=request.form.get('subjects'))
+                    session.add(tutor)
+                    session.commit()
+                elif request.form.get('user_type') == 'Student':
+                    student = Student(id=user.id, teacher_id=request.form.get('teacher_id'), tutor_id=request.form.get('tutor_id'), grade=request.form.get('grade'), stored_chats=request.form.get('stored_chats'), staring_assessment=request.form.get('staring_assessment'), current_subject=request.form.get('current_subject'), progress_percentage=request.form.get('progress_percentage'))
+                    session.add(student)
+                    session.commit()
+
+            return f"User created successfully!"
+        # Catch errors
+        except Exception as e:
+            return f"Error: {str(e)}"
+    return "User created"
+
+# Code for user login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # Store the input variables
+        username = request.form.get('username')
+        password = request.form.get('password')
+        with Session(engine) as session:
+            # Query the database for the user with the given username and password
+            user_login = session.query(User_Login).filter_by(username=username, password=password).first()
+            if user_login:
+                # If the user exists, return a message (this will be changed to actually logging the user in)
+                return f"Login successful for user: {user_login.username} with ID: {user_login.id}"
+            else:
+                # If the user does not exist, return an error message
+                return "Invalid username or password"
+    # Sends user to login.html page
+    return render_template('login.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+    
+    
 # with Session(engine) as session:
 #     anthony = User(name="Anthony")
 #     kim = User(name="Kim", last_login=datetime.now(timezone.utc))
@@ -132,55 +207,3 @@ Base.metadata.create_all(engine)
 #     for post in posts:
 #         print(post)
 #         print(f"  {post.user}")
-
-@app.route('/')
-def home():
-    return render_template('home.html')
-
-@app.route('/create_user', methods=['GET', 'POST'])
-def create_user():
-    if request.method == 'POST':
-        try:
-            with Session(engine) as session:
-                user_login = session.query(User_Login).filter_by(username=request.form.get('username')).first()
-                if user_login:
-                    return "Username already exists. Please choose a different username."
-                user = User(
-                    user_type=request.form.get('user_type'),
-                    name = request.form.get('name'),
-                    district = request.form.get('district'),
-                    age = request.form.get('age')
-                )
-                session.add(user)
-                session.commit()
-                user2 = User_Login(id=user.id, username=request.form.get('username'), password=request.form.get('password'))
-                session.add(user2)
-                session.commit()
-                if request.form.get('user_type') == 'Tutor':
-                    tutor = Tutor(id=user.id, subjects=request.form.get('subjects'))
-                    session.add(tutor)
-                    session.commit()
-                elif request.form.get('user_type') == 'Student':
-                    student = Student(id=user.id, teacher_id=request.form.get('teacher_id'), tutor_id=request.form.get('tutor_id'), grade=request.form.get('grade'), stored_chats=request.form.get('stored_chats'), staring_assessment=request.form.get('staring_assessment'), current_subject=request.form.get('current_subject'), progress_percentage=request.form.get('progress_percentage'))
-                    session.add(student)
-                    session.commit()
-            return f"User created successfully!"
-        except Exception as e:
-            return f"Error: {str(e)}"
-    return "User created"
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        with Session(engine) as session:
-            user_login = session.query(User_Login).filter_by(username=username, password=password).first()
-            if user_login:
-                return f"Login successful for user: {user_login.username} with ID: {user_login.id}"
-            else:
-                return "Invalid username or password"
-    return render_template('login.html')
-
-if __name__ == '__main__':
-    app.run(debug=True)
