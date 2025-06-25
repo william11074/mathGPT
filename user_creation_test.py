@@ -142,6 +142,9 @@ def create_user():
     if request.method == 'POST':
         try:
             with Session(engine) as session:
+                user_login = session.query(User_Login).filter_by(username=request.form.get('username')).first()
+                if user_login:
+                    return "Username already exists. Please choose a different username."
                 user = User(
                     user_type=request.form.get('user_type'),
                     name = request.form.get('name'),
@@ -165,6 +168,19 @@ def create_user():
         except Exception as e:
             return f"Error: {str(e)}"
     return "User created"
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        with Session(engine) as session:
+            user_login = session.query(User_Login).filter_by(username=username, password=password).first()
+            if user_login:
+                return f"Login successful for user: {user_login.username} with ID: {user_login.id}"
+            else:
+                return "Invalid username or password"
+    return render_template('login.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
