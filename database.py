@@ -2,8 +2,9 @@
 # Actions are stored at "\create_user" and "\login"
 # Data is requested as request.form.get('____') with ____ replacable by user data columns in the database
 # "create_user()" takes in user data and adds a new us rto the database
+# "login()" takes in a username and password and returns whether or not they are valid (also returns user_id if valid)
 
-# For backend
+# For backend:
 # Nullable means if you want to have a field that can be empty
 # Primary key is a unique identifier for each row in the table
 # Foreign key is a reference to another table's primary key
