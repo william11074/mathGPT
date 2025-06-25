@@ -1,8 +1,15 @@
 # This file creates the tables for the supabase database and adds basic user creation and user login functionality
 # Actions are stored at "\create_user" and "\login"
-# Data is requested at 
+# Data is requested as request.form.get('____') with ____ replacable by user data columns in the database
+# "create_user()" takes in user data and adds a new us rto the database
 
-from datetime import datetime, timezone
+# For backend
+# Nullable means if you want to have a field that can be empty
+# Primary key is a unique identifier for each row in the table
+# Foreign key is a reference to another table's primary key
+# Polymorphic identity is used for inheritance in SQLAlchemy, allowing you to query subclasses of a base class
+# Relationship is used to define relationships between tables in SQLAlchemy
+# Flask is used to create a web application with routes for user creation and login
 from typing import Optional
 from sqlalchemy import create_engine, String, Text, select, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column, Mapped, Session, relationship
@@ -13,9 +20,11 @@ engine = create_engine("postgresql://postgres:supabasetesting@db.uexllsxcfbknokv
 
 app = Flask(__name__)
 
+# Base class for declarative models
 class Base(DeclarativeBase):
     pass
 
+# Default User class for basically everyone
 class User(Base):
     __tablename__ = "user"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -24,7 +33,7 @@ class User(Base):
     age: Mapped[Optional[int]] = mapped_column(String, nullable=True)
     name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
-
+    # Relationship to link User with User_Login
     __mapper_args__ = {
         "polymorphic_identity": "User",
         "polymorphic_on": "user_type",
@@ -32,18 +41,21 @@ class User(Base):
     
     def __repr__(self):
         return f"User(id={self.id}, name={self.username})"
-    
+
+# Side class that corresponds to User that includes login information
 class User_Login(Base):
     __tablename__ = "user_login"
     id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
     
+# Tutor class
 class Tutor(User):
     __tablename__ = "tutor"
     id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
     subjects: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
+    # Relationship to link Tutor with Student
     students: Mapped[List["Student"]] = relationship(
         back_populates="tutor", 
         foreign_keys="Student.tutor_id"
@@ -56,7 +68,7 @@ class Tutor(User):
     def __repr__(self):
         return f"Tutor(id={self.id}, username={self.username})"
 
-
+# Student class
 class Student(User):
     __tablename__ = "student"
     id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
@@ -68,6 +80,7 @@ class Student(User):
     current_subject: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     progress_percentage: Mapped[Optional[float]]
 
+    # Relationship to link Student with Tutor
     tutor: Mapped[Optional["Tutor"]] = relationship(
         back_populates="students",
         foreign_keys=[tutor_id]
