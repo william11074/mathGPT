@@ -155,3 +155,6 @@ def create_user():
         except Exception as e:
             return f"Error: {str(e)}"
     return "User created"
+
+if __name__ == '__main__':
+    app.run(debug=True)
